@@ -4,7 +4,7 @@ import time
 
 try:
     # Khởi tạo kết nối Serial
-    ser = serial.Serial('COM7', 9600, timeout=1)  # Thay 'COM7' bằng cổng thực tế của Arduino
+    ser = serial.Serial('COM3', 9600, timeout=1)  # Thay 'COM7' bằng cổng thực tế của Arduino
     time.sleep(2)  # Đợi cho Arduino reset
 except serial.SerialException as e:
     ser = None  # Đặt ser thành None nếu không thể kết nối
@@ -13,7 +13,6 @@ def send_text():
     if ser is not None and ser.is_open:
         text_to_send = textbox1.get("1.0", tk.END).strip() + '\n'  # Lấy chuỗi từ textbox1 và thêm \n
         ser.write(text_to_send.encode('utf-8'))  # Gửi chuỗi đến Arduino dưới dạng UTF-8
-        textbox1.delete("1.0", tk.END)  # Xóa nội dung cũ của textbox1 sau khi gửi
         time.sleep(0.1)  # Chờ một khoảng thời gian nhỏ để tránh xung đột với buffer
 
 def receive_text():
@@ -25,16 +24,17 @@ def receive_text():
 
         if ser.in_waiting > 0:  # Kiểm tra xem có dữ liệu nhận được không
             try:
-                # Giải mã dữ liệu, thay thế byte không hợp lệ bằng ký tự thay thế (?)
                 received_data = ser.read(ser.in_waiting).decode('utf-8', errors='replace').strip()
                 print(f"Received data: {received_data}")  # In ra dữ liệu nhận được để kiểm tra
             except UnicodeDecodeError as e:
                 print(f"Unicode decode error: {e}")  # Báo lỗi nếu có vấn đề khi giải mã
         
         if received_data:
-            textbox2.insert(tk.END, received_data)  # Hiển thị dữ liệu từ Arduino (đã được đảo)
+            received_data += '$'  # Thêm ký tự $ vào cuối chuỗi
+            textbox2.insert(tk.END, received_data)  # Hiển thị dữ liệu từ Arduino (đã được đảo và thêm $)
         else:
             textbox2.insert(tk.END, "No data received")
+
 
 def on_closing():
     if ser is not None and ser.is_open:
